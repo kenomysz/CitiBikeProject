@@ -9,7 +9,7 @@ namespace CityBikeProject
         static void Main(string[] args)
         {
             string tripsPath = @"JC-202509-citibike-tripdata.csv";
-            string weatherPath = @"open-meteo-40.74N74.04W51m.csv";
+            string weatherPath = @"open-meteo-40.74N74.04W11m.csv";
 
             var trips = Utils.LoadTrips(tripsPath);
             var hourlyWeather = Utils.LoadWeather(weatherPath);
