@@ -120,24 +120,5 @@ namespace CityBikeProject
             var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
             return R * c;
         }
-        public static string FormatTripsOutput(IEnumerable<BikeTrip> selectedTrips)
-        {
-            if (!selectedTrips.Any()) return "Brak danych.";
-
-            var lines = selectedTrips.Select(t =>
-            {
-                double distKm = CalculateDistance(t.StartLat, t.StartLng, t.EndLat, t.EndLng);
-                string start = t.StartStationName != "" ? t.StartStationName : "[NO DATA]";
-                string end = t.EndStationName != "" ? t.EndStationName : "[NO DATA]";
-                return $"RIDE ID: {t.RideId} : {start} -> {end}";
-            });
-
-            return string.Join(Environment.NewLine, lines);
-        }
-        public static bool IsValidGps(BikeTrip t) // gps data validity
-        {
-            return Math.Abs(t.StartLat) > 0.001 && Math.Abs(t.StartLng) > 0.001 &&
-                   Math.Abs(t.EndLat) > 0.001 && Math.Abs(t.EndLng) > 0.001;
-        }
     }
 }

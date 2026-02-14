@@ -12,18 +12,37 @@ namespace CityBikeProject
         public static void BasicStatsTime(IEnumerable<BikeTrip> trips)
         {
             var validTimeTrips = trips.Where(t => t.DurationMinutes > 0).ToList();
-            var totalTime = validTimeTrips.Sum(t => t.DurationMinutes);
-            var avgTime = validTimeTrips.Average(t => t.DurationMinutes);
+            if (!validTimeTrips.Any())
+            {
+                Console.WriteLine("1. Ride Time Statistics");
+                DisplayQResult(new { Message = "No valid trips found." });
+                return;
+            }
             var maxTime = validTimeTrips.Max(t => t.DurationMinutes);
+            var stats = new
+            {
+                Summary = new
+                {
+                    AnalyzedTrips = validTimeTrips.Count,
+                    TotalTimeMinutes = Math.Round(validTimeTrips.Sum(t => t.DurationMinutes), 2),
+                    AvgTimeMinutes = Math.Round(validTimeTrips.Average(t => t.DurationMinutes), 2),
+                    MaxTimeMinutes = Math.Round(maxTime, 2)
+                },
+                LongestTrip = validTimeTrips
+                    .Where(t => t.DurationMinutes == maxTime)
+                    .Select(t => new
+                    {
+                        t.RideId,
+                        t.StartStationName,
+                        t.EndStationName,
+                        StartedAt = t.StartedAt,
+                        Duration = Math.Round(t.DurationMinutes, 2)
+                    })
+                    .FirstOrDefault()
+            };
 
-            var longestTrips = validTimeTrips.Where(t => t.DurationMinutes == maxTime);
-
-            Console.WriteLine("1. Statystyki czasu jazdy");
-            Console.WriteLine($"Liczba analizowanych przejazdów: {validTimeTrips.Count}");
-            Console.WriteLine($"Łączny czas: {totalTime:F2} min");
-            Console.WriteLine($"Średni czas: {avgTime:F2} min");
-            Console.WriteLine($"Najdłuższy przejazd (wg Czasu: {maxTime:F2} min) ---");
-            Console.WriteLine(FormatTripsOutput(longestTrips.Take(1)));
+            Console.WriteLine("1. Ride Time Statistics");
+            DisplayQResult(stats);
         }
 
         public static void FindPopularSpots(IEnumerable<BikeTrip> trips)
@@ -211,7 +230,7 @@ namespace CityBikeProject
                     (t, w) => w.Temperature)
                 .GroupBy(temp => Math.Floor(temp / 5) * 5)
                 .Select(g => new {
-                    TemperatureRange = $"{g.Key} do {g.Key + 5}°C",
+                    TemperatureRange = $"{g.Key} - {g.Key + 5}°C",
                     TripCount = g.Count(),
                     AverageTempInBracket = Math.Round(g.Average(), 1)
                 })
@@ -222,35 +241,42 @@ namespace CityBikeProject
             DisplayQResult(stats);
         }
 
-        public static void AverageSpeedByWeather(List<BikeTrip> trips, List<Weather> hourlyWeather)
+        public static void AverageSpeedByWeather(IEnumerable<BikeTrip> trips, IEnumerable<Weather> hourlyWeather)
         {
             var stats = trips
-                 .Join(hourlyWeather,
-                     trip => new { trip.StartedAt.Date, trip.StartedAt.Hour },
-                     weather => new { Date = weather.DateTime.Date, weather.DateTime.Hour },
-                     (trip, weather) => new
-                     {
-                         trip.DurationMinutes,
-                         DistanceKm = CalculateDistance(trip.StartLat, trip.StartLng, trip.EndLat, trip.EndLng),
-                         weather.WindSpeed
-                     })
-                 .Where(x => x.DurationMinutes > 0 && x.DistanceKm > 0)
-                 .Select(x => new
-                 {
-                     WindBracket = (int)(x.WindSpeed / 5) * 5,
-                     SpeedKmh = x.DistanceKm / (x.DurationMinutes / 60.0)
-                 })
-                 .Where(x => x.SpeedKmh < 60)
-                 .GroupBy(x => x.WindBracket)
-                 .Select(g => new
-                 {
-                     WindRange = $"{g.Key}-{g.Key + 5} km/h",
-                     AverageSpeed = Math.Round(g.Average(x => x.SpeedKmh), 2),
-                     TripCount = g.Count(),
-                     SortKey = g.Key
-                 })
-                 .OrderBy(r => r.SortKey)
-                 .ToList();
+                    .Join(hourlyWeather,
+                        trip => new { trip.StartedAt.Date, trip.StartedAt.Hour },
+                        weather => new { Date = weather.DateTime.Date, weather.DateTime.Hour },
+                        (trip, weather) => new
+                        {
+                            trip.DurationMinutes,
+                            DistanceKm = CalculateDistance(trip.StartLat, trip.StartLng, trip.EndLat, trip.EndLng),
+                            weather.WindSpeed
+                        })
+                    .Where(x => x.DurationMinutes > 0 && x.DistanceKm > 0)
+                    .Select(x => new
+                    {
+                        WindBracket = (int)(x.WindSpeed / 5) * 5,
+                        SpeedKmh = x.DistanceKm / (x.DurationMinutes / 60.0)
+                    })
+                    .Where(x => x.SpeedKmh < 60)
+                    .GroupBy(x => x.WindBracket)
+                    .Select(g => new
+                    {
+                        WindRange = $"{g.Key}-{g.Key + 5} km/h",
+                        AverageSpeed = Math.Round(g.Average(x => x.SpeedKmh), 2),
+                        TripCount = g.Count(),
+                        SortKey = g.Key
+                    })
+                    .OrderBy(r => r.SortKey)
+                    .Select(r => new
+                    {
+                        r.WindRange,
+                        r.AverageSpeed,
+                        r.TripCount
+                    })
+                    .ToList();
+
             Console.WriteLine("7. Avg Trip speed vs Wind Speed (km/h)");
             DisplayQResult(stats);
         }
