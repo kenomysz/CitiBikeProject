@@ -1,5 +1,5 @@
 # **CitiBikeProject**
-C# application for analyzing bike trip data from New York City, September 2025 using LINQ. 
+C# application for analyzing bike trip data from Jersey City, September 2025 using LINQ. 
 Additionaly, weather data is used to check rain, temperature and wind impact on cyclist behavior.
 
 Data sources:
